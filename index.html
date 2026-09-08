@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>YAAPBOX — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #0a0a0a; --surface: #111111; --border: #1c1c1c; --border2: #272727; --text: #e8e6e0; --muted2: #5e5c58; --accent: #c8f55a; --danger: #ff4d4d; --font-head: 'Syne', sans-serif; --font-mono: 'DM Mono', monospace; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-mono); overflow: hidden; }
+    .grid-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+    .grid-bg::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 52px 52px; opacity: 0.35; }
+    .grid-bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 70% at 50% 55%, transparent 20%, var(--bg) 100%); }
+    .stage { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+    .top-mark { display: flex; align-items: center; gap: 16px; margin-bottom: 44px; }
+    .mark-line { width: 44px; height: 1px; background: var(--border2); }
+    .mark-text { font-family: var(--font-head); font-size: 11px; font-weight: 700; letter-spacing: 0.32em; text-transform: uppercase; color: var(--muted2); }
+    .card { width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--border2); position: relative; }
+    .card::before { content: ''; position: absolute; top: -1px; left: -1px; width: 16px; height: 16px; border-top: 2px solid var(--accent); border-left: 2px solid var(--accent); }
+    .card::after { content: ''; position: absolute; bottom: -1px; right: -1px; width: 16px; height: 16px; border-bottom: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+    .step-bar { display: flex; align-items: center; padding: 18px 28px; border-bottom: 1px solid var(--border); }
+    .step-item { display: flex; align-items: center; gap: 8px; flex: 1; }
+    .step-num { width: 22px; height: 22px; border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--muted2); }
+    .step-num.active { border-color: var(--accent); background: var(--accent); color: #0a0a0a; font-weight: 700; }
+    .step-num.done { border-color: var(--accent); color: var(--accent); }
+    .step-label { font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted2); }
+    .step-label.active { color: var(--text); }
+    .step-connector { flex: 1; height: 1px; background: var(--border); margin: 0 10px; position: relative; }
+    .step-connector.filled::after { content: ''; position: absolute; inset: 0; background: var(--accent); }
+    .slides-wrap { overflow: hidden; }
+    .slides { display: flex; transition: transform 0.4s; width: 300%; }
+    .slide { width: calc(100% / 3); flex-shrink: 0; }
+    .card-head { padding: 28px 28px 0; }
+    .card-title { font-family: var(--font-head); font-size: 24px; font-weight: 800; color: var(--text); }
+    .card-title span { color: var(--accent); }
+    .card-body { padding: 24px 28px 28px; }
+    .field-group { margin-bottom: 18px; }
+    .field-label { display: block; font-size: 9px; text-transform: uppercase; color: var(--muted2); margin-bottom: 9px; }
+    input { width: 100%; background: var(--bg); border: 1px solid var(--border2); color: var(--text); font-family: var(--font-mono); font-size: 13px; padding: 13px 15px; outline: none; }
+    input:focus { border-color: var(--accent); }
+    .err-line { font-size: 10px; color: var(--danger); margin-top: 7px; opacity: 0; height: 12px; }
+    .err-line.show { opacity: 1; }
+    .btn-primary { width: 100%; background: var(--accent); color: #0a0a0a; border: none; font-family: var(--font-head); font-size: 11px; font-weight: 700; padding: 15px; cursor: pointer; text-transform: uppercase; }
+    .btn-primary:disabled { opacity: 0.5; cursor: wait; }
+    .verified-chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(200,245,90,0.08); border: 1px solid rgba(200,245,90,0.2); padding: 6px 12px; margin-bottom: 20px; font-size: 10px; color: var(--accent); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { width: 14px; height: 14px; border: 2px solid #0a0a0a; border-top-color: transparent; border-radius: 50%; animation: spin 0.55s linear infinite; display: none; margin: 0 auto; }
+    .loading .spinner { display: block; }
+    .loading span { display: none; }
+    @media (max-width: 480px) { .step-label { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+  <div class="stage">
+    <div class="top-mark">
+      <div class="mark-line"></div>
+      <div class="mark-text">YAAPBOX</div>
+      <div class="mark-line"></div>
+    </div>
+    <div class="card">
+      <div class="step-bar">
+        <div class="step-item"><div class="step-num active" id="s1">1</div><div class="step-label active">Verify</div></div>
+        <div class="step-connector" id="c1"></div>
+        <div class="step-item"><div class="step-num" id="s2">2</div><div class="step-label">Enter</div></div>
+        <div class="step-connector" id="c2"></div>
+        <div class="step-item"><div class="step-num" id="s3">3</div><div class="step-label">Chat</div></div>
+      </div>
+      <div class="slides-wrap">
+        <div class="slides" id="slides">
+          <div class="slide">
+            <div class="card-head"><div class="card-title">WHO <span>ARE YOU?</span></div></div>
+            <div class="card-body">
+              <div class="field-group"><label class="field-label">Username</label><input id="u" type="text" autocomplete="off"><div class="err-line" id="ue"></div></div>
+              <div class="field-group"><label class="field-label">PIN</label><input id="p" type="password" maxlength="8"><div class="err-line" id="pe"></div></div>
+              <button class="btn-primary" onclick="v()"><span>Verify</span><div class="spinner"></div></button>
+            </div>
+          </div>
+          <div class="slide">
+            <div class="card-head"><div class="card-title">JOIN <span>ROOM</span></div></div>
+            <div class="card-body">
+              <div class="verified-chip">Verified: <strong id="va"></strong></div>
+              <div class="field-group"><label class="field-label">Nickname</label><input id="n" type="text" autocomplete="off"><div class="err-line" id="ne"></div></div>
+              <div class="field-group"><label class="field-label">Room Code</label><input id="rc" type="text" maxlength="6" autocomplete="off"><div class="err-line" id="rce"></div></div>
+              <button class="btn-primary" onclick="j()"><span>Enter</span><div class="spinner"></div></button>
+            </div>
+          </div>
+          <div class="slide">
+            <div class="card-body" style="text-align:center; padding:60px 0;">
+              <div style="font-size:32px; color:var(--accent);" id="ec">——</div>
+              <div style="margin-top:20px;"><div class="spinner" style="display:block; border-color:var(--accent);"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const db = path => fetch(`https://yaapbox-default-rtdb.firebaseio.com/${path}.json`).then(r => r.json());
+    const dbP = (path, val) => fetch(`https://yaapbox-default-rtdb.firebaseio.com/${path}.json`, { method: 'PATCH', body: JSON.stringify(val) });
+    let vu = '';
+    const el = id => document.getElementById(id);
+    const err = (id, m) => { const e = el(id); e.textContent = m; e.classList.add('show'); };
+    const clr = id => el(id).classList.remove('show');
+
+    el('rc').oninput = e => e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    ['u','p','n','rc'].forEach(i => el(i).onfocus = () => clr(i+'e'));
+
+    async function v() {
+      const u = el('u').value.trim().toLowerCase(), p = el('p').value;
+      if (!u || !p) return err(u?'pe':'ue', 'Required');
+      el('slides').parentElement.parentElement.classList.add('loading');
+      try {
+        const d = await db(`users/${u}`);
+        if (!d || d.pin !== p) throw 0;
+        vu = u; el('va').textContent = u; el('n').value = u; step(2);
+      } catch(e) { err(p?'ue':'pe', 'Invalid'); }
+      el('slides').parentElement.parentElement.classList.remove('loading');
+    }
+
+    async function j() {
+      const n = el('n').value.trim(), c = el('rc').value.trim();
+      if (!n || c.length < 4) return err(n?'rce':'ne', 'Invalid');
+      try {
+        await dbP(`rooms/${c}/members/${vu}`, { nickname: n, online: true, joined: Date.now() });
+        el('ec').textContent = c; step(3);
+        setTimeout(() => location.href = `chat.html?room=${c}&name=${n}&user=${vu}`, 1000);
+      } catch(e) { err('rce', 'Error'); }
+    }
+
+    function step(n) {
+      el('slides').style.transform = `translateX(${-(n-1)*(100/3)}%)`;
+      [1,2,3].forEach(i => { el('s'+i).className = 'step-num'+(i<n?' done':(i===n?' active':'')); if(i<n) el('s'+i).textContent='✓'; });
+      if(n>1) el('c1').classList.add('filled'); if(n>2) el('c2').classList.add('filled');
+    }
+  </script>
+</body>
+</html>

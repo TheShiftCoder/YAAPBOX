@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>YAAPBOX — Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --s: #111111; --s2: #161616; --b: #1c1c1c; --b2: #272727; --t: #e8e6e0; --t2: #b0aeaa; --a: #c8f55a; --d: #ff4d4d; --o: #4ade80; --f-h: 'Syne', sans-serif; --f-m: 'DM Mono', monospace; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { height: 100vh; background: var(--bg); color: var(--t); font-family: var(--f-m); overflow: hidden; }
+.shell { display: flex; height: 100vh; }
+.sidebar { width: 240px; border-right: 1px solid var(--b); display: flex; flex-direction: column; background: var(--s); }
+.sb-h { padding: 16px; border-bottom: 1px solid var(--b); display: flex; justify-content: space-between; align-items: center; }
+.room-p { padding: 4px 8px; border: 1px solid var(--b2); font-size: 10px; color: var(--a); cursor: pointer; }
+.c-list { flex: 1; overflow-y: auto; padding: 10px; }
+.c-item { padding: 10px; cursor: pointer; border-left: 2px solid transparent; display: flex; gap: 10px; align-items: center; }
+.c-item.active { background: rgba(200,245,90,0.07); border-left-color: var(--a); }
+.av { width: 30px; height: 30px; background: #1b1b1b; display: flex; align-items: center; justify-content: center; font-size: 12px; position: relative; }
+.dot { width: 6px; height: 6px; background: var(--o); border-radius: 50%; position: absolute; bottom: -2px; right: -2px; }
+.main { flex: 1; display: flex; flex-direction: column; }
+.h { height: 56px; border-bottom: 1px solid var(--b); padding: 0 20px; display: flex; align-items: center; justify-content: space-between; }
+.msgs { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
+.m-row { max-width: 70%; margin-bottom: 4px; display: flex; flex-direction: column; }
+.m-row.me { align-self: flex-end; align-items: flex-end; }
+.bubble { padding: 8px 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.me .bubble { background: var(--a); color: #000; }
+.them .bubble { background: var(--s2); border: 1px solid var(--b2); }
+.meta { font-size: 9px; color: var(--t2); margin-top: 2px; display: flex; gap: 8px; opacity: 0; }
+.m-row:hover .meta { opacity: 1; }
+.del { color: var(--d); cursor: pointer; background: none; border: none; font-size: 9px; }
+.input-a { border-top: 1px solid var(--b); padding: 10px; display: flex; gap: 8px; align-items: flex-end; }
+.i-w { flex: 1; background: var(--s); border: 1px solid var(--b2); padding-left: 10px; }
+textarea { width: 100%; background: none; border: none; color: #fff; padding: 10px 0; resize: none; outline: none; height: 40px; font-family: inherit; }
+.btn { background: var(--a); border: none; padding: 8px 12px; cursor: pointer; font-weight: 700; }
+code { background: rgba(0,0,0,0.3); padding: 2px 4px; }
+@media (max-width: 600px) { .sidebar { display: none; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sb-h"><b style="color:var(--a)">YAAPBOX</b><div class="room-p" id="rb" onclick="copy()"></div></div>
+    <div class="c-list" id="cl"></div>
+    <div style="padding:10px; border-top:1px solid var(--b); font-size:11px; color:var(--a)" id="me"></div>
+  </aside>
+  <main class="main">
+    <div class="h"><b id="cn">Select Chat</b><button class="btn" onclick="copy()" style="font-size:9px">Copy Code</button></div>
+    <div class="msgs" id="mw"></div>
+    <div class="input-a">
+      <input type="file" id="fi" style="display:none" onchange="up(this)">
+      <button class="btn" onclick="el('fi').click()">📷</button>
+      <div class="i-w"><textarea id="mi" placeholder="Message..."></textarea></div>
+      <button class="btn" id="sb" onclick="send()">➤</button>
+    </div>
+  </main>
+</div>
+<script>
+const p = new URLSearchParams(location.search), R = p.get('room'), N = p.get('name'), U = p.get('user');
+const el = id => document.getElementById(id), url = path => `https://yaapbox-default-rtdb.firebaseio.com/rooms/${R}/${path}.json`;
+let ac = null, mems = {}, snap = '';
+
+const api = (path, m='GET', b) => fetch(url(path), { method: m, body: b ? JSON.stringify(b) : null }).then(r => r.json());
+
+async function init() {
+  await api(`members/${U}`, 'PATCH', { nickname: N, online: true, last: Date.now() });
+  const r = await api(''); mems = r?.members || {};
+  drawList(); if (Object.keys(mems).length) open('general');
+  setInterval(poll, 2000);
+  window.onbeforeunload = () => api(`members/${U}`, 'PATCH', { online: false });
+}
+
+function drawList() {
+  const l = [{ id: 'general', n: '#general', o: 1 }, ...Object.entries(mems).filter(x => x[0] !== U).map(x => ({ id: x[0], n: x[1].nickname || x[0], o: x[1].online }))];
+  el('cl').innerHTML = l.map(c => `<div class="c-item ${ac===c.id?'active':''}" onclick="open('${c.id}')"><div class="av">${c.n[0]}${c.o&&c.id!=='general'?'<div class="dot"></div>':''}</div>${c.n}</div>`).join('');
+}
+
+async function open(id) { ac = id; el('cn').textContent = id; await load(); drawList(); }
+
+async function load() {
+  const d = await api(`messages/${ac}`);
+  const ms = Object.entries(d || {}).map(x => ({ ...x[1], k: x[0] })).sort((a,b) => a.ts - b.ts);
+  const s = ms.map(m => m.k).join(); if (s === snap) return; snap = s;
+  el('mw').innerHTML = ms.map(m => {
+    const isMe = m.sender === U;
+    return `<div class="m-row ${isMe?'me':'them'}">
+      ${!isMe ? `<small style="font-size:9px; color:var(--t2)">${m.sn||m.sender}</small>` : ''}
+      <div class="bubble">${m.img?`<img src="${m.img}" style="max-width:100%; border-radius:4px; display:block; margin-bottom:5px;" onclick="window.open('${m.img}')">`:''}${fmt(m.txt||'')}</div>
+      <div class="meta">${new Date(m.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}${isMe?`<button class="del" onclick="del('${m.k}')">delete</button>`:''}</div>
+    </div>`;
+  }).join('');
+  el('mw').scrollTop = el('mw').scrollHeight;
+}
+
+function poll() { if(ac) load(); api('members').then(m => { mems = m || {}; drawList(); }); }
+
+function send() {
+  const t = el('mi').value.trim(); if (!t || !ac) return;
+  api(`messages/${ac}`, 'POST', { txt: t, sender: U, sn: N, ts: Date.now() });
+  el('mi').value = ''; el('mi').style.height = '40px';
+}
+
+function up(i) {
+  const f = i.files[0]; if(!f) return;
+  const r = new FileReader(); r.onload = e => api(`messages/${ac}`, 'POST', { img: e.target.result, sender: U, sn: N, ts: Date.now() });
+  r.readAsDataURL(f); i.value = '';
+}
+
+async function del(k) { if(confirm('Delete?')) { await api(`messages/${ac}/${k}`, 'DELETE'); load(); } }
+
+function fmt(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/```([\s\S]+?)```/g, '<code style="display:block; white-space:pre">$1</code>').replace(/`([^`]+)`/g, '<code>$1</code>'); }
+function copy() { navigator.clipboard.writeText(R); alert('Copied: ' + R); }
+
+el('mi').oninput = function() { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; };
+el('mi').onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
+el('rb').textContent = R; el('me').textContent = N;
+init();
+</script>
+</body>
+</html>
