@@ -1,140 +1,936 @@
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>YAAPBOX — Login</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap"
+    rel="stylesheet">
   <style>
-    :root { --bg: #0a0a0a; --surface: #111111; --border: #1c1c1c; --border2: #272727; --text: #e8e6e0; --muted2: #5e5c58; --accent: #c8f55a; --danger: #ff4d4d; --font-head: 'Syne', sans-serif; --font-mono: 'DM Mono', monospace; }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-mono); overflow: hidden; }
-    .grid-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-    .grid-bg::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 52px 52px; opacity: 0.35; }
-    .grid-bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 70% at 50% 55%, transparent 20%, var(--bg) 100%); }
-    .stage { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
-    .top-mark { display: flex; align-items: center; gap: 16px; margin-bottom: 44px; }
-    .mark-line { width: 44px; height: 1px; background: var(--border2); }
-    .mark-text { font-family: var(--font-head); font-size: 11px; font-weight: 700; letter-spacing: 0.32em; text-transform: uppercase; color: var(--muted2); }
-    .card { width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--border2); position: relative; }
-    .card::before { content: ''; position: absolute; top: -1px; left: -1px; width: 16px; height: 16px; border-top: 2px solid var(--accent); border-left: 2px solid var(--accent); }
-    .card::after { content: ''; position: absolute; bottom: -1px; right: -1px; width: 16px; height: 16px; border-bottom: 2px solid var(--accent); border-right: 2px solid var(--accent); }
-    .step-bar { display: flex; align-items: center; padding: 18px 28px; border-bottom: 1px solid var(--border); }
-    .step-item { display: flex; align-items: center; gap: 8px; flex: 1; }
-    .step-num { width: 22px; height: 22px; border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--muted2); }
-    .step-num.active { border-color: var(--accent); background: var(--accent); color: #0a0a0a; font-weight: 700; }
-    .step-num.done { border-color: var(--accent); color: var(--accent); }
-    .step-label { font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted2); }
-    .step-label.active { color: var(--text); }
-    .step-connector { flex: 1; height: 1px; background: var(--border); margin: 0 10px; position: relative; }
-    .step-connector.filled::after { content: ''; position: absolute; inset: 0; background: var(--accent); }
-    .slides-wrap { overflow: hidden; }
-    .slides { display: flex; transition: transform 0.4s; width: 300%; }
-    .slide { width: calc(100% / 3); flex-shrink: 0; }
-    .card-head { padding: 28px 28px 0; }
-    .card-title { font-family: var(--font-head); font-size: 24px; font-weight: 800; color: var(--text); }
-    .card-title span { color: var(--accent); }
-    .card-body { padding: 24px 28px 28px; }
-    .field-group { margin-bottom: 18px; }
-    .field-label { display: block; font-size: 9px; text-transform: uppercase; color: var(--muted2); margin-bottom: 9px; }
-    input { width: 100%; background: var(--bg); border: 1px solid var(--border2); color: var(--text); font-family: var(--font-mono); font-size: 13px; padding: 13px 15px; outline: none; }
-    input:focus { border-color: var(--accent); }
-    .err-line { font-size: 10px; color: var(--danger); margin-top: 7px; opacity: 0; height: 12px; }
-    .err-line.show { opacity: 1; }
-    .btn-primary { width: 100%; background: var(--accent); color: #0a0a0a; border: none; font-family: var(--font-head); font-size: 11px; font-weight: 700; padding: 15px; cursor: pointer; text-transform: uppercase; }
-    .btn-primary:disabled { opacity: 0.5; cursor: wait; }
-    .verified-chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(200,245,90,0.08); border: 1px solid rgba(200,245,90,0.2); padding: 6px 12px; margin-bottom: 20px; font-size: 10px; color: var(--accent); }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .spinner { width: 14px; height: 14px; border: 2px solid #0a0a0a; border-top-color: transparent; border-radius: 50%; animation: spin 0.55s linear infinite; display: none; margin: 0 auto; }
-    .loading .spinner { display: block; }
-    .loading span { display: none; }
-    @media (max-width: 480px) { .step-label { display: none; } }
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface2: #161616;
+      --border: #1c1c1c;
+      --border2: #272727;
+      --text: #e8e6e0;
+      --muted: #3a3835;
+      --muted2: #5e5c58;
+      --muted3: #8a8884;
+      --accent: #c8f55a;
+      --accent-d: #9abf3a;
+      --accent-dim: rgba(200, 245, 90, 0.08);
+      --danger: #ff4d4d;
+      --font-head: 'Syne', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Grid background ── */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .grid-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 52px 52px;
+      opacity: 0.35;
+    }
+
+    .grid-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 70% at 50% 55%, transparent 20%, var(--bg) 100%);
+    }
+
+    .glow-dot {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 360px;
+      height: 360px;
+      background: radial-gradient(circle, rgba(200, 245, 90, 0.05) 0%, transparent 70%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── Stage ── */
+    .stage {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    /* ── Top wordmark ── */
+    .top-mark {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 44px;
+      animation: fadeDown 0.45s ease both;
+    }
+
+    .mark-line {
+      width: 44px;
+      height: 1px;
+      background: var(--border2);
+    }
+
+    .mark-text {
+      font-family: var(--font-head);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--muted2);
+    }
+
+    /* ── Card ── */
+    .card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      position: relative;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: -1px;
+      width: 16px;
+      height: 16px;
+      border-top: 2px solid var(--accent);
+      border-left: 2px solid var(--accent);
+    }
+
+    .card::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      right: -1px;
+      width: 16px;
+      height: 16px;
+      border-bottom: 2px solid var(--accent);
+      border-right: 2px solid var(--accent);
+    }
+
+    /* ── Step indicator ── */
+    .step-bar {
+      display: flex;
+      align-items: center;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--border);
+      gap: 0;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .step-item:last-child {
+      flex: 0;
+    }
+
+    .step-num {
+      width: 22px;
+      height: 22px;
+      border: 1px solid var(--border2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      letter-spacing: 0.04em;
+      color: var(--muted2);
+      flex-shrink: 0;
+      transition: border-color 0.3s, background 0.3s, color 0.3s;
+    }
+
+    .step-num.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #0a0a0a;
+      font-weight: 700;
+    }
+
+    .step-num.done {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .step-label {
+      font-size: 8px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted2);
+      white-space: nowrap;
+      transition: color 0.3s;
+    }
+
+    .step-label.active {
+      color: var(--text);
+    }
+
+    .step-connector {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      margin: 0 10px;
+      position: relative;
+    }
+
+    .step-connector::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.5s ease;
+    }
+
+    .step-connector.filled::after {
+      width: 100%;
+    }
+
+    /* ── Slide container ── */
+    .slides-wrap {
+      overflow: hidden;
+      position: relative;
+    }
+
+    .slides {
+      display: flex;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 300%;
+    }
+
+    .slide {
+      width: calc(100% / 3);
+      flex-shrink: 0;
+    }
+
+    /* ── Card sections ── */
+    .card-head {
+      padding: 28px 28px 0;
+    }
+
+    .card-title {
+      font-family: var(--font-head);
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      line-height: 1.05;
+      margin-bottom: 8px;
+    }
+
+    .card-title span {
+      color: var(--accent);
+    }
+
+    .card-sub {
+      font-size: 11px;
+      color: var(--muted3);
+      letter-spacing: 0.03em;
+      line-height: 1.65;
+    }
+
+    .card-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 22px 0 0;
+    }
+
+    .card-body {
+      padding: 24px 28px 28px;
+    }
+
+    /* ── Field ── */
+    .field-group {
+      margin-bottom: 18px;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted2);
+      margin-bottom: 9px;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      padding: 13px 15px;
+      outline: none;
+      caret-color: var(--accent);
+      transition: border-color 0.15s, background 0.15s;
+      -webkit-appearance: none;
+      border-radius: 0;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-color: var(--accent);
+      background: #0d0d0d;
+    }
+
+    input::placeholder {
+      color: var(--muted);
+    }
+
+    /* PIN input — big mono digits */
+    .pin-input {
+      font-size: 22px !important;
+      letter-spacing: 0.5em !important;
+      text-align: center;
+      color: var(--accent) !important;
+    }
+
+    .pin-input::placeholder {
+      font-size: 13px !important;
+      letter-spacing: 0.1em !important;
+      text-align: center;
+      color: var(--muted) !important;
+    }
+
+    /* Code input */
+    .code-input {
+      font-size: 20px !important;
+      letter-spacing: 0.3em !important;
+      text-transform: uppercase;
+      color: var(--accent) !important;
+    }
+
+    .code-input::placeholder {
+      font-size: 14px !important;
+      letter-spacing: 0.2em !important;
+      color: var(--muted) !important;
+    }
+
+    /* ── Error ── */
+    .err-line {
+      font-size: 10px;
+      color: var(--danger);
+      letter-spacing: 0.04em;
+      margin-top: 7px;
+      min-height: 14px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .err-line.show {
+      opacity: 1;
+    }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      width: 100%;
+      background: var(--accent);
+      color: #0a0a0a;
+      border: none;
+      font-family: var(--font-head);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 15px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.15s, transform 0.1s;
+      border-radius: 0;
+    }
+
+    .btn-primary:hover {
+      background: #d6ff6a;
+    }
+
+    .btn-primary:active {
+      transform: scale(0.99);
+    }
+
+    .btn-primary.loading {
+      pointer-events: none;
+      background: var(--accent-d);
+    }
+
+    .btn-primary .btn-text {
+      transition: opacity 0.2s;
+    }
+
+    .btn-primary.loading .btn-text {
+      opacity: 0;
+    }
+
+    .btn-primary .btn-spin {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .btn-primary.loading .btn-spin {
+      opacity: 1;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid #0a0a0a;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.55s linear infinite;
+    }
+
+    /* ── Footer note ── */
+    .card-footer {
+      padding: 0 28px 20px;
+      text-align: center;
+    }
+
+    .footer-text {
+      font-size: 10px;
+      color: var(--muted2);
+      letter-spacing: 0.04em;
+    }
+
+    .footer-text .dot {
+      display: inline-block;
+      width: 3px;
+      height: 3px;
+      background: var(--muted);
+      border-radius: 50%;
+      vertical-align: middle;
+      margin: 0 6px;
+      position: relative;
+      top: -1px;
+    }
+
+    /* ── Verified badge (step 2) ── */
+    .verified-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(200, 245, 90, 0.2);
+      padding: 6px 12px;
+      margin-bottom: 20px;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+    }
+
+    .verified-chip svg {
+      width: 11px;
+      height: 11px;
+    }
+
+    /* ── Shake ── */
+    .shake {
+      animation: shake 0.38s ease;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      20% {
+        transform: translateX(-6px);
+      }
+
+      40% {
+        transform: translateX(6px);
+      }
+
+      60% {
+        transform: translateX(-4px);
+      }
+
+      80% {
+        transform: translateX(4px);
+      }
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .card {
+      animation: fadeUp 0.55s ease 0.1s both;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 480px) {
+      .card {
+        max-width: 100%;
+      }
+
+      .card-head,
+      .card-body,
+      .card-footer {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+
+      .card-title {
+        font-size: 20px;
+      }
+
+      .step-bar {
+        padding: 14px 20px;
+      }
+
+      .step-label {
+        display: none;
+      }
+    }
   </style>
 </head>
+
 <body>
+
   <div class="grid-bg"></div>
+  <div class="glow-dot"></div>
+
   <div class="stage">
+
+    <!-- Wordmark -->
     <div class="top-mark">
       <div class="mark-line"></div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: -4px;">
+        <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+        <path d="m3.3 7 8.7 5 8.7-5"/>
+        <path d="M12 22V12"/>
+      </svg>
       <div class="mark-text">YAAPBOX</div>
       <div class="mark-line"></div>
     </div>
+
+    <!-- Card -->
     <div class="card">
+
+      <!-- Step indicator -->
       <div class="step-bar">
-        <div class="step-item"><div class="step-num active" id="s1">1</div><div class="step-label active">Verify</div></div>
-        <div class="step-connector" id="c1"></div>
-        <div class="step-item"><div class="step-num" id="s2">2</div><div class="step-label">Enter</div></div>
-        <div class="step-connector" id="c2"></div>
-        <div class="step-item"><div class="step-num" id="s3">3</div><div class="step-label">Chat</div></div>
-      </div>
-      <div class="slides-wrap">
-        <div class="slides" id="slides">
-          <div class="slide">
-            <div class="card-head"><div class="card-title">WHO <span>ARE YOU?</span></div></div>
-            <div class="card-body">
-              <div class="field-group"><label class="field-label">Username</label><input id="u" type="text" autocomplete="off"><div class="err-line" id="ue"></div></div>
-              <div class="field-group"><label class="field-label">PIN</label><input id="p" type="password" maxlength="8"><div class="err-line" id="pe"></div></div>
-              <button class="btn-primary" onclick="v()"><span>Verify</span><div class="spinner"></div></button>
-            </div>
-          </div>
-          <div class="slide">
-            <div class="card-head"><div class="card-title">JOIN <span>ROOM</span></div></div>
-            <div class="card-body">
-              <div class="verified-chip">Verified: <strong id="va"></strong></div>
-              <div class="field-group"><label class="field-label">Nickname</label><input id="n" type="text" autocomplete="off"><div class="err-line" id="ne"></div></div>
-              <div class="field-group"><label class="field-label">Room Code</label><input id="rc" type="text" maxlength="6" autocomplete="off"><div class="err-line" id="rce"></div></div>
-              <button class="btn-primary" onclick="j()"><span>Enter</span><div class="spinner"></div></button>
-            </div>
-          </div>
-          <div class="slide">
-            <div class="card-body" style="text-align:center; padding:60px 0;">
-              <div style="font-size:32px; color:var(--accent);" id="ec">——</div>
-              <div style="margin-top:20px;"><div class="spinner" style="display:block; border-color:var(--accent);"></div></div>
-            </div>
-          </div>
+        <div class="step-item">
+          <div class="step-num active" id="stepNum1">1</div>
+          <div class="step-label active" id="stepLbl1">Verify</div>
+        </div>
+        <div class="step-connector" id="conn1"></div>
+        <div class="step-item">
+          <div class="step-num" id="stepNum2">2</div>
+          <div class="step-label" id="stepLbl2">Enter</div>
+        </div>
+        <div class="step-connector" id="conn2"></div>
+        <div class="step-item">
+          <div class="step-num" id="stepNum3">3</div>
+          <div class="step-label" id="stepLbl3">Chat</div>
         </div>
       </div>
-    </div>
-  </div>
+
+      <!-- Slides -->
+      <div class="slides-wrap">
+        <div class="slides" id="slides">
+
+          <!-- ── SLIDE 1: Username + PIN ── -->
+          <div class="slide" id="slide1">
+            <div class="card-head">
+              <div class="card-title">WHO<br><span>ARE YOU?</span></div>
+              <div class="card-sub">Enter your username and PIN to verify your identity.</div>
+              <div class="card-divider"></div>
+            </div>
+            <div class="card-body">
+              <div class="field-group">
+                <label class="field-label" for="usernameInput">Username</label>
+                <input id="usernameInput" type="text" placeholder="your_username" maxlength="24" autocomplete="off"
+                  spellcheck="false" />
+                <div class="err-line" id="usernameErr">Username cannot be empty.</div>
+              </div>
+              <div class="field-group" style="margin-bottom:24px">
+                <label class="field-label" for="pinInput">PIN</label>
+                <input id="pinInput" type="password" class="pin-input" placeholder="••••" maxlength="8"
+                  autocomplete="off" />
+                <div class="err-line" id="pinErr">Incorrect PIN. Try again.</div>
+              </div>
+              <button class="btn-primary" id="verifyBtn" onclick="handleVerify()">
+                <span class="btn-text">Verify Identity</span>
+                <span class="btn-spin"><span class="spinner"></span></span>
+              </button>
+            </div>
+            <div class="card-footer">
+              <div class="footer-text">
+                Invite-only
+                <span class="dot"></span>
+                No accounts stored
+                <span class="dot"></span>
+                Private
+              </div>
+            </div>
+          </div>
+
+          <!-- ── SLIDE 2: Nickname + Room Code ── -->
+          <div class="slide" id="slide2">
+            <div class="card-head">
+              <div class="card-title">JOIN THE<br><span>ROOM.</span></div>
+              <div class="card-sub">Choose how you'll appear and enter your room code.</div>
+              <div class="card-divider"></div>
+            </div>
+            <div class="card-body">
+              <div style="margin-bottom:18px">
+                <div class="verified-chip">
+                  <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M2 6l3 3 5-5" />
+                  </svg>
+                  Verified as <strong id="verifiedAs" style="margin-left:4px"></strong>
+                </div>
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="nicknameInput">Nickname</label>
+                <input id="nicknameInput" type="text" placeholder="how others see you" maxlength="20" autocomplete="off"
+                  spellcheck="false" />
+                <div class="err-line" id="nicknameErr">Nickname cannot be empty.</div>
+              </div>
+              <div class="field-group" style="margin-bottom:24px">
+                <label class="field-label" for="codeInput">Room Code</label>
+                <input id="codeInput" type="text" class="code-input" placeholder="ABC123" maxlength="6"
+                  autocomplete="off" spellcheck="false" />
+                <div class="err-line" id="codeErr">Enter a valid room code.</div>
+              </div>
+              <button class="btn-primary" id="joinBtn" onclick="handleJoin()">
+                <span class="btn-text">Enter Room</span>
+                <span class="btn-spin"><span class="spinner"></span></span>
+              </button>
+            </div>
+            <div class="card-footer">
+              <div class="footer-text">
+                <span style="color:var(--muted3);cursor:pointer;text-decoration:underline;text-underline-offset:3px"
+                  onclick="goBack()">← Back</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── SLIDE 3: Entering room (transition) ── -->
+          <div class="slide" id="slide3">
+            <div class="card-body" style="padding:52px 28px;text-align:center">
+              <div
+                style="font-size:9px;letter-spacing:0.26em;text-transform:uppercase;color:var(--accent);margin-bottom:16px"
+                id="enteringLabel">Entering Room</div>
+              <div
+                style="font-family:var(--font-mono);font-size:32px;letter-spacing:0.28em;color:var(--text);margin-bottom:8px"
+                id="enteringCode">——</div>
+              <div style="font-size:10px;color:var(--muted2);letter-spacing:0.08em;margin-bottom:32px">as <span
+                  id="enteringNick" style="color:var(--text)"></span></div>
+              <div style="display:flex;justify-content:center">
+                <div class="spinner"
+                  style="border-color:var(--accent);border-top-color:transparent;width:18px;height:18px"></div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /slides -->
+      </div><!-- /slides-wrap -->
+
+    </div><!-- /card -->
+  </div><!-- /stage -->
+
   <script>
-    const db = path => fetch(`https://yaapbox-default-rtdb.firebaseio.com/${path}.json`).then(r => r.json());
-    const dbP = (path, val) => fetch(`https://yaapbox-default-rtdb.firebaseio.com/${path}.json`, { method: 'PATCH', body: JSON.stringify(val) });
-    let vu = '';
-    const el = id => document.getElementById(id);
-    const err = (id, m) => { const e = el(id); e.textContent = m; e.classList.add('show'); };
-    const clr = id => el(id).classList.remove('show');
+    // ═══════════════════════════════════════
+    //  FIREBASE STUB
+    //  Replace this with the real db object
+    //  from the Firebase SDK above
+    // ═══════════════════════════════════════
 
-    el('rc').oninput = e => e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    ['u','p','n','rc'].forEach(i => el(i).onfocus = () => clr(i+'e'));
+    // Firebase Realtime Database URL
+    const DB_BASE = 'https://yaapbox-default-rtdb.firebaseio.com';
+    const DB_SUFFIX = '.json';
 
-    async function v() {
-      const u = el('u').value.trim().toLowerCase(), p = el('p').value;
-      if (!u || !p) return err(u?'pe':'ue', 'Required');
-      el('slides').parentElement.parentElement.classList.add('loading');
+    async function dbFetch(path, method = 'GET', body) {
+      const url = `${DB_BASE}/${path}${DB_SUFFIX}`;
+      const opts = { method, headers: { 'Content-Type': 'application/json' } };
+      if (body !== undefined) opts.body = JSON.stringify(body);
+      const res = await fetch(url, opts);
+      if (!res.ok) throw new Error(`Firebase request failed (${res.status})`);
+      return res.json();
+    }
+    async function dbGet(path) { return dbFetch(path, 'GET'); }
+    async function dbSet(path, value) { return dbFetch(path, 'PUT', value); }
+    async function dbPatch(path, value) { return dbFetch(path, 'PATCH', value); }
+    async function dbPush(path, value) { return dbFetch(path, 'POST', value); }
+
+    // Demo users stored in Firebase like:
+    // /users/nirwaj_user   { pin: "1234" }
+    // /users/her_username  { pin: "5678" }
+    const DEMO_USERS = {
+      'yaapbox': '1234',
+      'ghost': '5678',
+    };
+
+    let verifiedUsername = '';
+    let currentNickname = '';
+    let currentRoom = '';
+    let currentStep = 1;
+
+    // ── Input refs ──
+    const usernameInput = document.getElementById('usernameInput');
+    const pinInput = document.getElementById('pinInput');
+    const nicknameInput = document.getElementById('nicknameInput');
+    const codeInput = document.getElementById('codeInput');
+
+    // ── Auto-uppercase room code ──
+    codeInput.addEventListener('input', () => {
+      const p = codeInput.selectionStart;
+      codeInput.value = codeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      try { codeInput.setSelectionRange(p, p); } catch (e) { }
+      hideErr(codeInput, 'codeErr');
+    });
+
+    // ── Clear errors on input ──
+    usernameInput.addEventListener('input', () => hideErr(usernameInput, 'usernameErr'));
+    pinInput.addEventListener('input', () => hideErr(pinInput, 'pinErr'));
+    nicknameInput.addEventListener('input', () => hideErr(nicknameInput, 'nicknameErr'));
+
+    // ── Enter key navigation ──
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      if (currentStep === 1) {
+        if (document.activeElement === usernameInput) { pinInput.focus(); return; }
+        if (document.activeElement === pinInput) { handleVerify(); return; }
+      }
+      if (currentStep === 2) {
+        if (document.activeElement === nicknameInput) { codeInput.focus(); return; }
+        if (document.activeElement === codeInput) { handleJoin(); return; }
+      }
+    });
+
+    // ═══════════════════════════════════════
+    //  STEP 1 — VERIFY USERNAME + PIN
+    // ═══════════════════════════════════════
+    async function handleVerify() {
+      const uname = usernameInput.value.trim().toLowerCase();
+      const pin = pinInput.value.trim();
+
+      let ok = true;
+      if (!uname) { showErr(usernameInput, 'usernameErr', 'Username cannot be empty.'); ok = false; }
+      if (!pin) { showErr(pinInput, 'pinErr', 'PIN cannot be empty.'); ok = false; }
+      if (!ok) return;
+
+      const btn = document.getElementById('verifyBtn');
+      btn.classList.add('loading');
+
       try {
-        const d = await db(`users/${u}`);
-        if (!d || d.pin !== p) throw 0;
-        vu = u; el('va').textContent = u; el('n').value = u; step(2);
-      } catch(e) { err(p?'ue':'pe', 'Invalid'); }
-      el('slides').parentElement.parentElement.classList.remove('loading');
+        const data = await dbGet(`users/${uname}`);
+        btn.classList.remove('loading');
+        if (!data) {
+          showErr(usernameInput, 'usernameErr', 'Username not found.');
+          return;
+        }
+        if (data.pin !== pin) {
+          showErr(pinInput, 'pinErr', 'Incorrect PIN. Try again.');
+          return;
+        }
+        verifiedUsername = uname;
+        goToStep2();
+      } catch (err) {
+        btn.classList.remove('loading');
+        showErr(pinInput, 'pinErr', 'Connection error. Try again.');
+        console.error(err);
+      }
     }
 
-    async function j() {
-      const n = el('n').value.trim(), c = el('rc').value.trim();
-      if (!n || c.length < 4) return err(n?'rce':'ne', 'Invalid');
+    // ═══════════════════════════════════════
+    //  STEP 2 — NICKNAME + ROOM CODE
+    // ═══════════════════════════════════════
+    async function handleJoin() {
+      const nick = nicknameInput.value.trim();
+      const code = codeInput.value.trim().toUpperCase();
+
+      let ok = true;
+      if (!nick) { showErr(nicknameInput, 'nicknameErr', 'Nickname cannot be empty.'); ok = false; }
+      if (!code || code.length < 4) { showErr(codeInput, 'codeErr', 'Enter a valid room code (min 4 chars).'); ok = false; }
+      if (!ok) return;
+
+      const btn = document.getElementById('joinBtn');
+      btn.classList.add('loading');
+      currentNickname = nick;
+      currentRoom = code;
+
       try {
-        await dbP(`rooms/${c}/members/${vu}`, { nickname: n, online: true, joined: Date.now() });
-        el('ec').textContent = c; step(3);
-        setTimeout(() => location.href = `chat.html?room=${c}&name=${n}&user=${vu}`, 1000);
-      } catch(e) { err('rce', 'Error'); }
+        const room = await dbGet(`rooms/${code}`);
+        if (!room) {
+          await dbSet(`rooms/${code}`, {
+            createdBy: verifiedUsername,
+            createdAt: Date.now(),
+            members: {
+              [verifiedUsername]: {
+                nickname: currentNickname,
+                online: true,
+                joined: Date.now(),
+              },
+            },
+          });
+        } else {
+          await dbPatch(`rooms/${code}/members/${verifiedUsername}`, {
+            nickname: currentNickname,
+            online: true,
+            joined: Date.now(),
+          });
+        }
+        btn.classList.remove('loading');
+        goToStep3();
+      } catch (err) {
+        btn.classList.remove('loading');
+        showErr(codeInput, 'codeErr', 'Cannot join room. Try again.');
+        console.error(err);
+      }
     }
 
-    function step(n) {
-      el('slides').style.transform = `translateX(${-(n-1)*(100/3)}%)`;
-      [1,2,3].forEach(i => { el('s'+i).className = 'step-num'+(i<n?' done':(i===n?' active':'')); if(i<n) el('s'+i).textContent='✓'; });
-      if(n>1) el('c1').classList.add('filled'); if(n>2) el('c2').classList.add('filled');
+    // ═══════════════════════════════════════
+    //  NAVIGATION
+    // ═══════════════════════════════════════
+    function goToStep2() {
+      document.getElementById('verifiedAs').textContent = verifiedUsername;
+      nicknameInput.value = verifiedUsername; // pre-fill nickname with username
+      setStep(2);
+      setTimeout(() => nicknameInput.focus(), 450);
     }
+
+    function goToStep3() {
+      document.getElementById('enteringCode').textContent = currentRoom;
+      document.getElementById('enteringNick').textContent = currentNickname;
+      setStep(3);
+
+      // After brief animation, go to chat page
+      setTimeout(() => {
+        window.location.href = `chat.html?room=${encodeURIComponent(currentRoom)}&name=${encodeURIComponent(currentNickname)}&user=${encodeURIComponent(verifiedUsername)}`;
+      }, 2000);
+    }
+
+    function goBack() {
+      setStep(1);
+      setTimeout(() => usernameInput.focus(), 450);
+    }
+
+    function setStep(n) {
+      currentStep = n;
+      const slides = document.getElementById('slides');
+      slides.style.transform = `translateX(${-(n - 1) * (100 / 3)}%)`;
+
+      // Step numbers
+      for (let i = 1; i <= 3; i++) {
+        const num = document.getElementById('stepNum' + i);
+        const lbl = document.getElementById('stepLbl' + i);
+        num.classList.remove('active', 'done');
+        lbl.classList.remove('active');
+        if (i < n) { num.classList.add('done'); num.innerHTML = '✓'; }
+        if (i === n) { num.classList.add('active'); num.textContent = i; lbl.classList.add('active'); }
+        if (i > n) { num.textContent = i; }
+      }
+
+      // Connectors
+      document.getElementById('conn1').classList.toggle('filled', n >= 2);
+      document.getElementById('conn2').classList.toggle('filled', n >= 3);
+    }
+
+    // ═══════════════════════════════════════
+    //  UTILS
+    // ═══════════════════════════════════════
+    function showErr(input, errId, msg) {
+      const el = document.getElementById(errId);
+      el.textContent = msg; el.classList.add('show');
+      input.classList.remove('shake');
+      void input.offsetWidth;
+      input.classList.add('shake');
+      input.addEventListener('animationend', () => input.classList.remove('shake'), { once: true });
+    }
+    function hideErr(input, errId) {
+      document.getElementById(errId).classList.remove('show');
+    }
+
+    // Focus on load
+    window.addEventListener('load', () => setTimeout(() => usernameInput.focus(), 400));
   </script>
 </body>
+
 </html>
