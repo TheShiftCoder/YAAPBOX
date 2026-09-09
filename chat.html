@@ -760,15 +760,18 @@ code {
 
 <!--
   ══════════════════════════════════════
-  FIREBASE SDK — uncomment & configure
+  FIREBASE SDK
   ══════════════════════════════════════
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-  <script>
-    firebase.initializeApp({ ... });
-    const db = firebase.database();
-  </script>
 -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    databaseURL: "https://yaapbox-default-rtdb.firebaseio.com"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+</script>
 
 <script>
 // ══════════════════════════════════════════
@@ -780,209 +783,117 @@ const ROOM     = (params.get('room') || 'DEMO01').toUpperCase();
 const ME       = params.get('name') || 'you';
 const ME_USER  = params.get('user') || ME;
 const MAX_CHARS = 500;
-const DB_BASE = 'https://yaapbox-default-rtdb.firebaseio.com';
-const DB_SUFFIX = '.json';
-let dbConnected = false;
+let dbConnected = true;
 let roomMembers = {};
-let pollTimer = null;
-let skipNextPoll = false;
-let lastMessageSnapshot = '';
-let lastMessageConv = null;
+let listeners = {};
 
-async function dbFetch(path, method = 'GET', body) {
-  const url = `${DB_BASE}/${path}${DB_SUFFIX}`;
-  const opts = { method, headers: { 'Content-Type': 'application/json' } };
-  if (body !== undefined) opts.body = JSON.stringify(body);
-  const res = await fetch(url, opts);
-  if (!res.ok) throw new Error(`Firebase request failed (${res.status})`);
-  return res.json();
-}
-async function dbGet(path) { return dbFetch(path, 'GET'); }
-async function dbSet(path, value) { return dbFetch(path, 'PUT', value); }
-async function dbPatch(path, value) { return dbFetch(path, 'PATCH', value); }
-async function dbPush(path, value) { return dbFetch(path, 'POST', value); }
-async function dbDelete(path) { return dbFetch(path, 'DELETE'); }
-
+// Presence & Room Management
 async function updatePresence(online) {
-  if (!dbConnected) return;
-  try {
-    await dbPatch(`rooms/${ROOM}/members/${ME_USER}`, { online, lastSeen: Date.now() });
-  } catch (err) {
-    console.warn('Presence update failed', err);
-  }
+  const ref = db.ref(`rooms/${ROOM}/members/${ME_USER}`);
+  await ref.update({ online, lastSeen: Date.now() });
+  if (online) ref.onDisconnect().update({ online: false, lastSeen: Date.now() });
 }
 
 async function ensureRoomMember() {
-  const room = await dbGet(`rooms/${ROOM}`);
-  if (!room) {
-    await dbSet(`rooms/${ROOM}`, {
+  const roomRef = db.ref(`rooms/${ROOM}`);
+  const snapshot = await roomRef.once('value');
+  if (!snapshot.exists()) {
+    await roomRef.set({
       createdBy: ME_USER,
       createdAt: Date.now(),
       members: {
-        [ME_USER]: {
-          nickname: ME,
-          online: true,
-          joined: Date.now(),
-        },
-      },
+        [ME_USER]: { nickname: ME, online: true, joined: Date.now() }
+      }
     });
   } else {
-    await dbPatch(`rooms/${ROOM}/members/${ME_USER}`, {
-      nickname: ME,
-      online: true,
-      joined: Date.now(),
+    await roomRef.child('members').child(ME_USER).update({
+      nickname: ME, online: true, joined: Date.now()
     });
   }
-  dbConnected = true;
 }
 
-async function loadRoomData() {
-  const room = await dbGet(`rooms/${ROOM}`);
-  if (!room) throw new Error('Room not found');
-  roomMembers = room.members || {};
-  const previousPreview = allConvs.reduce((map, conv) => {
-    map[conv.id] = conv.preview;
-    return map;
-  }, {});
+function setupRealtimeListeners() {
+  db.ref(`rooms/${ROOM}/members`).on('value', (snapshot) => {
+    roomMembers = snapshot.val() || {};
+    refreshConvList();
+    if (!activeConv && allConvs.length > 0) openConv(allConvs[0].id);
+  });
+}
 
-  const newConvs = [{
+function watchMessages(convId) {
+  if (!convId) return;
+  if (listeners.messages) {
+     db.ref(`rooms/${ROOM}/messages/${activeConv}`).off(); // Properly turn off old listener
+  }
+
+  const msgRef = db.ref(`rooms/${ROOM}/messages/${convId}`);
+  listeners.messages = msgRef;
+
+  msgRef.on('value', (snapshot) => {
+    const data = snapshot.val() || {};
+    const msgs = Object.entries(data).map(([key, value]) => ({ ...value, key })).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    renderAllMessages(msgs, convId);
+  });
+}
+
+function renderAllMessages(msgs, convId) {
+  const wrap = document.getElementById('messagesWrap');
+  if (!wrap) return;
+
+  wrap.innerHTML = '';
+  lastSender = null;
+  lastMessageDay = '';
+  const tr = createTypingRow();
+  wrap.appendChild(tr);
+
+  msgs.forEach(msg => appendMsg({
+    text: msg.text,
+    image: msg.image,
+    sender: msg.senderName || msg.sender,
+    isMe: msg.sender === ME_USER,
+    ts: msg.ts || Date.now(),
+    key: msg.key
+  }, false));
+  scrollToBottom();
+}
+
+function refreshConvList() {
+  const updated = [{
     id: 'general',
     name: '#general',
     isGroup: true,
     online: true,
-    preview: previousPreview.general || 'Room channel',
+    preview: 'Room channel',
     unread: 0,
   }];
 
   Object.entries(roomMembers).forEach(([id, member]) => {
     if (id === ME_USER) return;
-    newConvs.push({
+    updated.push({
       id,
       name: member.nickname || id,
       isGroup: false,
       online: !!member.online,
-      preview: previousPreview[id] || 'Direct message',
+      preview: 'Direct message',
       unread: 0,
     });
   });
 
-  allConvs = newConvs;
+  allConvs = updated;
   renderConvList(allConvs);
-  await openConv(allConvs[0].id);
-}
-
-async function loadMembers() {
-  if (!dbConnected) return;
-  try {
-    const room = await dbGet(`rooms/${ROOM}`);
-    roomMembers = (room && room.members) || {};
-    const previousPreview = allConvs.reduce((map, conv) => {
-      map[conv.id] = conv.preview;
-      return map;
-    }, {});
-
-    const updated = [{
-      id: 'general',
-      name: '#general',
-      isGroup: true,
-      online: true,
-      preview: previousPreview.general || 'Room channel',
-      unread: 0,
-    }];
-
-    Object.entries(roomMembers).forEach(([id, member]) => {
-      if (id === ME_USER) return;
-      updated.push({
-        id,
-        name: member.nickname || id,
-        isGroup: false,
-        online: !!member.online,
-        preview: previousPreview[id] || 'Direct message',
-        unread: 0,
-      });
-    });
-
-    allConvs = updated;
-    renderConvList(allConvs);
-  } catch (err) {
-    console.warn('Failed to refresh members', err);
-  }
-}
-
-async function loadMessages(convId, scroll = true) {
-  const wrap = document.getElementById('messagesWrap');
-  if (!wrap) return;
-  lastSender = null;
-
-  if (!dbConnected) {
-    const msgs = DEMO_MSGS[convId] || [];
-    wrap.innerHTML = '';
-    const div = document.createElement('div');
-    div.className = 'day-divider';
-    div.textContent = 'Today';
-    wrap.appendChild(div);
-    const tr = createTypingRow();
-    wrap.appendChild(tr);
-
-    msgs.forEach(msg => appendMsg({ ...msg, isMe: msg.sender === ME }, false));
-    if (scroll) scrollToBottom();
-    return;
-  }
-
-  try {
-    const data = await dbGet(`rooms/${ROOM}/messages/${convId}`);
-    const msgs = Object.entries(data || {}).map(([key, value]) => ({ ...value, key })).sort((a, b) => (a.ts || 0) - (b.ts || 0));
-    const snapshot = msgs.map(m => `${m.key}:${m.ts}:${m.text}:${m.image ? '1' : '0'}`).join('|');
-
-    if (convId === lastMessageConv && snapshot === lastMessageSnapshot) {
-      if (scroll) scrollToBottom();
-      return;
-    }
-
-    lastMessageConv = convId;
-    lastMessageSnapshot = snapshot;
-
-    wrap.innerHTML = '';
-    lastSender = null;
-    lastMessageDay = '';
-    const tr = createTypingRow();
-    wrap.appendChild(tr);
-
-    msgs.forEach(msg => appendMsg({
-      text: msg.text,
-      image: msg.image,
-      sender: msg.senderName || msg.sender,
-      isMe: msg.sender === ME_USER,
-      ts: msg.ts || Date.now(),
-      key: msg.key
-    }, false));
-    if (scroll) scrollToBottom();
-  } catch (err) {
-    console.warn('Failed to load messages', err);
-  }
-}
-
-function startPolling() {
-  if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(() => {
-    if (skipNextPoll) return;
-    if (activeConv) loadMessages(activeConv, false);
-    if (dbConnected) loadMembers();
-  }, 2500);
 }
 
 async function initChat() {
   try {
     await ensureRoomMember();
-    await loadRoomData();
-    startPolling();
-    window.addEventListener('beforeunload', () => updatePresence(false));
+    setupRealtimeListeners();
+    await updatePresence(true);
   } catch (err) {
     console.warn('Firebase initialization failed', err);
     showToast('Unable to connect to Firebase. Using demo mode.');
     dbConnected = false;
     renderConvList(allConvs);
-    await openConv(allConvs[0].id);
+    if (allConvs.length > 0) openConv(allConvs[0].id);
   }
 }
 
@@ -1085,14 +996,14 @@ async function openConv(id) {
   document.getElementById('statusDot').style.opacity  = '1';
   document.getElementById('statusDot').style.background = member.online ? 'var(--online)' : 'var(--muted2)';
 
-  // Render messages
+  // Render messages wrap cleanup
   const wrap = document.getElementById('messagesWrap');
   wrap.innerHTML = '';
   const tr = createTypingRow();
   wrap.appendChild(tr);
 
   if (dbConnected) {
-    await loadMessages(id);
+    watchMessages(id);
   } else {
     const msgs = DEMO_MSGS[id] || [];
     msgs.forEach(msg => appendMsg({ ...msg, isMe: msg.sender === ME }, false));
@@ -1175,7 +1086,7 @@ async function deleteMsg(btn, key) {
 
   if (dbConnected && key && activeConv) {
     try {
-      await dbDelete(`rooms/${ROOM}/messages/${activeConv}/${key}`);
+      await db.ref(`rooms/${ROOM}/messages/${activeConv}/${key}`).remove();
     } catch (err) {
       console.warn('Delete failed', err);
       showToast('Failed to delete from server.');
@@ -1215,25 +1126,17 @@ async function sendImage(base64) {
     return;
   }
 
-  // Update preview in sidebar
-  const m = allConvs.find(c => c.id === activeConv);
-  if (m) { m.preview = '📷 Image'; renderConvList(allConvs); }
-
-  skipNextPoll = true;
   try {
-    await dbPush(`rooms/${ROOM}/messages/${activeConv}`, {
+    await db.ref(`rooms/${ROOM}/messages/${activeConv}`).push({
       image: base64,
       sender: ME_USER,
       senderName: ME,
       ts: Date.now(),
     });
     await updatePresence(true);
-    await loadMessages(activeConv);
   } catch (err) {
     console.warn('Image upload failed', err);
     showToast('Failed to upload image.');
-  } finally {
-    setTimeout(() => { skipNextPoll = false; }, 1500);
   }
 }
 
@@ -1248,29 +1151,22 @@ async function sendMessage() {
   updateCharCounter(0);
   clearTimeout(typingTimer);
 
-  appendMsg({ text, sender: ME, isMe: true, ts: Date.now() });
+  if (!dbConnected) {
+    appendMsg({ text, sender: ME, isMe: true, ts: Date.now() });
+    return;
+  }
 
-  // Update preview in sidebar
-  const m = allConvs.find(c => c.id === activeConv);
-  if (m) { m.preview = text; renderConvList(allConvs); }
-
-  if (dbConnected) {
-    skipNextPoll = true;
-    try {
-      await dbPush(`rooms/${ROOM}/messages/${activeConv}`, {
-        text,
-        sender: ME_USER,
-        senderName: ME,
-        ts: Date.now(),
-      });
-      await updatePresence(true);
-      await loadMessages(activeConv);
-    } catch (err) {
-      console.warn('Message send failed', err);
-      showToast('Unable to send message.');
-    } finally {
-      setTimeout(() => { skipNextPoll = false; }, 1500);
-    }
+  try {
+    await db.ref(`rooms/${ROOM}/messages/${activeConv}`).push({
+      text,
+      sender: ME_USER,
+      senderName: ME,
+      ts: Date.now(),
+    });
+    await updatePresence(true);
+  } catch (err) {
+    console.warn('Message send failed', err);
+    showToast('Unable to send message.');
   }
 }
 
